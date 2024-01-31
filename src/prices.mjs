@@ -18,8 +18,8 @@ function createApp(database) {
     const age = req.query.age ? parseInt(req.query.age) : undefined;
     const type = req.query.type;
     const baseCost = database.findBasePriceByType(type).cost;
-    const newDate = parsePlainDate(req.query.date);
-    const cost = calculateCost(age, type, baseCost, newDate);
+    const date = parsePlainDate(req.query.date);
+    const cost = calculateCost(age, type, baseCost, date);
     res.json({ cost });
   });
 
@@ -29,11 +29,11 @@ function createApp(database) {
     }
   }
 
-  function calculateCost(age, type, baseCost, newDate) {
+  function calculateCost(age, type, baseCost, date) {
     if (type === "night") {
       return calculateCostForNightTicket(age, baseCost);
     } else {
-      return calculateCostForDayTicket(age, baseCost, newDate);
+      return calculateCostForDayTicket(age, baseCost, date);
     }
   }
 
@@ -50,8 +50,8 @@ function createApp(database) {
     return baseCost;
   }
 
-  function calculateCostForDayTicket(age, baseCost, newDate) {
-    let reduction = calculateReduction(newDate);
+  function calculateCostForDayTicket(age, baseCost, date) {
+    let reduction = calculateReduction(date);
     if (age === undefined) {
       return Math.ceil(baseCost * (1 - reduction / 100));
     }
@@ -67,28 +67,23 @@ function createApp(database) {
     return Math.ceil(baseCost * (1 - reduction / 100));
   }
 
-  function calculateReduction(newDate) {
+  function calculateReduction(date) {
     let reduction = 0;
-    if (newDate && isMonday(newDate) && !isHoliday(newDate)) {
+    if (date && isMonday(date) && !isHoliday(date)) {
       reduction = 35;
     }
     return reduction;
   }
 
-  function isMonday(newDate) {
-    return newDate.dayOfWeek === 1;
+  function isMonday(date) {
+    return date.dayOfWeek === 1;
   }
 
-  function isHoliday(newDate) {
+  function isHoliday(date) {
     const holidays = database.getHolidays();
     for (let row of holidays) {
       let newHoliday = Temporal.PlainDate.from(row.holiday);
-      if (
-        newDate &&
-        newDate.year === newHoliday.year &&
-        newDate.month === newHoliday.month &&
-        newDate.day === newHoliday.day
-      ) {
+      if (date && date.year === newHoliday.year && date.month === newHoliday.month && date.day === newHoliday.day) {
         return true;
       }
     }
