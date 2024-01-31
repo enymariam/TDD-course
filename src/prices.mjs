@@ -18,17 +18,10 @@ function createApp(database) {
     const age = req.query.age ? parseInt(req.query.age) : undefined;
     const type = req.query.type;
     const baseCost = database.findBasePriceByType(type).cost;
-    const date = parseDate(req.query.date);
     const newDate = parsePlainDate(req.query.date);
-    const cost = calculateCost(age, type, date, baseCost, newDate);
+    const cost = calculateCost(age, type, baseCost, newDate);
     res.json({ cost });
   });
-
-  function parseDate(dateString) {
-    if (dateString) {
-      return new Date(dateString);
-    }
-  }
 
   function parsePlainDate(dateString) {
     if (dateString) {
@@ -36,11 +29,11 @@ function createApp(database) {
     }
   }
 
-  function calculateCost(age, type, date, baseCost, newDate) {
+  function calculateCost(age, type, baseCost, newDate) {
     if (type === "night") {
       return calculateCostForNightTicket(age, baseCost);
     } else {
-      return calculateCostForDayTicket(age, date, baseCost, newDate);
+      return calculateCostForDayTicket(age, baseCost, newDate);
     }
   }
 
@@ -57,8 +50,8 @@ function createApp(database) {
     return baseCost;
   }
 
-  function calculateCostForDayTicket(age, date, baseCost, newDate) {
-    let reduction = calculateReduction(date, newDate);
+  function calculateCostForDayTicket(age, baseCost, newDate) {
+    let reduction = calculateReduction(newDate);
     if (age === undefined) {
       return Math.ceil(baseCost * (1 - reduction / 100));
     }
@@ -74,16 +67,16 @@ function createApp(database) {
     return Math.ceil(baseCost * (1 - reduction / 100));
   }
 
-  function calculateReduction(date, newDate) {
+  function calculateReduction(newDate) {
     let reduction = 0;
-    if (date && isMonday(date, newDate) && !isHoliday(newDate)) {
+    if (newDate && isMonday(newDate) && !isHoliday(newDate)) {
       reduction = 35;
     }
     return reduction;
   }
 
-  function isMonday(date, newDate) {
-    return date.getDay() === 1 && newDate.dayOfWeek === 1;
+  function isMonday(newDate) {
+    return newDate.dayOfWeek === 1;
   }
 
   function isHoliday(newDate) {
